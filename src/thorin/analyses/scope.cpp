@@ -14,6 +14,8 @@ namespace thorin {
 
 //------------------------------------------------------------------------------
 
+bool hack = false;
+
 Scope::Scope(World& world, ArrayRef<Lambda*> entries)
     : world_(world)
 {
@@ -38,10 +40,15 @@ Scope::Scope(World& world, ArrayRef<Lambda*> entries)
 
     uce(entry);
     build_preds();
-    auto exit = find_exit();
+    auto exit = find_exit(entries);
     link_exit(entry, exit);
     ScopeView(*this,  true).rpo_numbering(entry);
     ScopeView(*this, false).rpo_numbering(exit);
+
+    if (hack) {
+        emit_thorin(*this);
+        hack = false;
+    }
 }
 
 Scope::~Scope() {
@@ -148,18 +155,33 @@ void Scope::uce(Lambda* entry) {
 #endif
 }
 
-Lambda* Scope::find_exit() {
+Lambda* Scope::find_exit(ArrayRef<Lambda*> entries_) {
+    LambdaSet entries(entries_.begin(), entries_.end());
     LambdaSet exits;
 
     for (auto lambda : rpo_) {
         if (succs_[lambda].empty())
             exits.insert(lambda);
+        else {
+            bool only_back_edges = true;
+            for (auto succ : succs_[lambda]) {
+                if (!entries.contains(succ)) {
+                    only_back_edges = false;
+                    break;
+                }
+            }
+
+            if (only_back_edges)
+                exits.insert(lambda);
+        }
     }
 
     Lambda* exit;
     if (exits.size() == 1)
         exit = *exits.begin();
     else {
+        if (exits.empty())
+            std::cout << "crap!!" << std::endl;
         exit = world().meta_lambda();
         rpo_.push_back(exit);
         reverse_rpo_.push_back(exit);
@@ -195,6 +217,9 @@ void Scope::link_exit(LambdaSet& done, LambdaSet& reachable, Lambda* cur, Lambda
         }
         reachable.insert(cur);
         if (still_unreachable) {
+            std::cout << "holy shit, it really happens" << std::endl;
+            hack = true;
+            exit->dump_head();
             link_succ(cur, exit);
             link_pred(cur, exit);
         }

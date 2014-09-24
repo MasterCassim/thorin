@@ -54,7 +54,7 @@ private:
     void build_succs();
     void build_preds();
     void uce(Lambda* entry);
-    Lambda* find_exit();
+    Lambda* find_exit(ArrayRef<Lambda*> entries);
     void link_exit(Lambda* entry, Lambda* exit);
     void link_exit(LambdaSet&, LambdaSet&, Lambda* cur, Lambda* exit);
     void link_succ(Lambda* src, Lambda* dst) { assert(contains(src) && contains(dst)); succs_[src].push_back(dst); };
