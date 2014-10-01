@@ -214,12 +214,13 @@ std::ostream& CodeGen::emit_jump(const Lambda* lambda) {
 
 void emit_thorin(const Scope& scope, bool fancy, bool nocolor) {
     CodeGen cg(fancy, nocolor);
-    auto domtree = scope.domtree();
+    cg.stream() << "------------------------------------------------------------------------------------------\n";
+    //auto domtree = scope.domtree();
     Schedule schedule = schedule_smart(scope);
     auto bbs = bb_schedule(scope);
     for (auto lambda : bbs) {
-        int depth = fancy ? domtree->depth(lambda) : 0;
-        cg.indent += depth;
+        //int depth = fancy ? domtree->depth(lambda) : 0;
+        //cg.indent += depth;
         cg.newline();
         cg.emit_head(lambda);
 
@@ -227,7 +228,7 @@ void emit_thorin(const Scope& scope, bool fancy, bool nocolor) {
             cg.emit_assignment(op);
 
         cg.emit_jump(lambda);
-        cg.indent -= depth;
+        //cg.indent -= depth;
     }
     cg.newline();
 }

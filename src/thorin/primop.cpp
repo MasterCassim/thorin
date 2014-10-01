@@ -118,7 +118,7 @@ Def Map::extract_mapped_ptr() const { return world().extract(this, 1); }
 
 Def Map::mem_out() const {
     auto uses = this->uses();
-    assert(1 <= uses.size() && uses.size() <= 2);
+    assert(uses.size() == 2);
     size_t i = uses[0]->type().isa<MemType>() ? 0 : 1;
     assert(uses[i]->isa<Extract>());
     assert(uses[i]->num_uses() == 1);

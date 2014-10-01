@@ -1,25 +1,26 @@
 #include <vector>
 
-#include "thorin/primop.h"
 #include "thorin/world.h"
-#include "thorin/util/queue.h"
 #include "thorin/analyses/scope.h"
+#include "thorin/util/queue.h"
 
 namespace thorin {
 
-std::vector<Def> free_vars(const Scope& scope) {
-    DefSet vars;
-    std::queue<Def> queue;
+std::vector<const Param*> free_params(const Scope& scope) {
     DefSet set;
+    std::vector<const Param*> params;
+    std::queue<Def> queue;
 
     // now find all params not in scope
     auto enqueue = [&] (Def def) {
-        if (!visit(set, def) && !def->is_const()) {
-            if (scope.contains(def))
-                for (auto op : def->ops())
+        if (!visit(set, def)) {
+            if (auto param = def->isa<Param>()) {
+                if (!scope.contains(param))
+                    params.push_back(param);
+            } else if (auto primop = def->isa<PrimOp>()) {
+                for (auto op : primop->ops())
                     queue.push(op);
-            else
-                vars.insert(def);
+            }
         }
     };
 
@@ -31,7 +32,7 @@ std::vector<Def> free_vars(const Scope& scope) {
             enqueue(pop(queue));
     }
 
-    return std::vector<Def>(vars.begin(), vars.end());
+    return params;
 }
 
 }

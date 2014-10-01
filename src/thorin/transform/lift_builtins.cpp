@@ -2,8 +2,7 @@
 #include "thorin/analyses/free_vars.h"
 #include "thorin/analyses/scope.h"
 #include "thorin/transform/mangle.h"
-
-#include <iostream>
+#include "thorin/util/queue.h"
 
 namespace thorin {
 
@@ -16,11 +15,26 @@ void lift_builtins(World& world) {
 
     for (auto cur : todo) {
         Scope scope(cur);
-        auto vars = free_vars(scope);
-#ifndef NDEBUG
-        for (auto var : vars)
-            assert(var->order() == 0 && "creating a higher-order function");
-#endif
+        std::vector<Def> vars;
+        for (auto param : free_params(scope)) {
+            assert(param->order() == 0 && "creating a higher-order function");
+
+            if (param->type().isa<MemType>()) {
+                //std::queue<Def> queue;
+                //DefSet done;
+                //auto enqueue = [&] (Def def) {
+                    //if (!visit(done, def)) {
+                        //queue.insert(def);
+                    //}
+                //};
+
+                for (auto use : param->uses()) {
+                    vars.push_back(use);
+                }
+            } else
+                vars.push_back(param);
+        }
+
         auto lifted = lift(scope, vars);
 
         for (auto use : cur->uses()) {
@@ -41,7 +55,7 @@ void lift_builtins(World& world) {
             }
         }
 
-        assert(free_vars(Scope(lifted)).empty());
+        assert(free_params(Scope(lifted)).empty());
     }
 }
 
