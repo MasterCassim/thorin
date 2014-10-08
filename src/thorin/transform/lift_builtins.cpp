@@ -3,10 +3,15 @@
 #include "thorin/analyses/scope.h"
 #include "thorin/transform/mangle.h"
 #include "thorin/util/queue.h"
+#include "thorin/be/thorin.h"
+
+#include <iostream>
 
 namespace thorin {
 
 void lift_builtins(World& world) {
+    std::cout << "********************************************************************************" << std::endl;
+    emit_thorin(world);
     std::vector<Lambda*> todo;
     for (auto cur : world.copy_lambdas()) {
         if (cur->is_passed_to_accelerator() && !cur->is_basicblock())
@@ -19,7 +24,7 @@ void lift_builtins(World& world) {
         for (auto param : free_params(scope)) {
             assert(param->order() == 0 && "creating a higher-order function");
 
-            if (param->type().isa<MemType>()) {
+            //if (param->type().isa<MemType>()) {
                 //std::queue<Def> queue;
                 //DefSet done;
                 //auto enqueue = [&] (Def def) {
@@ -28,11 +33,12 @@ void lift_builtins(World& world) {
                     //}
                 //};
 
-                for (auto use : param->uses()) {
-                    vars.push_back(use);
-                }
-            } else
-                vars.push_back(param);
+                //for (auto use : param->uses()) {
+                    //vars.push_back(use);
+                //}
+            //} else
+            //assert(!param->type().isa<MemType>());
+            vars.push_back(param);
         }
 
         auto lifted = lift(scope, vars);
@@ -57,6 +63,9 @@ void lift_builtins(World& world) {
 
         assert(free_params(Scope(lifted)).empty());
     }
+
+    std::cout << "********************************************************************************" << std::endl;
+    emit_thorin(world);
 }
 
 }
