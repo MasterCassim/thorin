@@ -4,6 +4,7 @@
 #include "thorin/analyses/schedule.h"
 #include "thorin/analyses/verify.h"
 #include "thorin/transform/critical_edge_elimination.h"
+#include "thorin/util/queue.h"
 
 namespace thorin {
 
@@ -20,7 +21,7 @@ public:
     Def read(Lambda* lambda, Def ptr);
     void write(Lambda* lambda, Def ptr, Def val);
     size_t ptr2handle(Def ptr);
-    bool escapes(Def ptr);
+    bool escape_analysis(Def ptr);
     bool is_escaping(Def ptr);
 
 private:
@@ -32,7 +33,7 @@ private:
     size_t cur_handle_ = 0;
 };
 
-bool Mem2Reg::escapes(Def ptr) {
+bool Mem2Reg::escape_analysis(Def ptr) {
     assert(ptr->type().isa<PtrType>());
     auto i = escaping_.find(ptr);
     if (i != escaping_.end())
@@ -40,24 +41,23 @@ bool Mem2Reg::escapes(Def ptr) {
 
     for (auto use : ptr->uses()) {
         if (auto lea = use->isa<LEA>()) {
-            if (escapes(lea))
+            if (escape_analysis(lea))
                 return escaping_[ptr] = true;
         } else if (!use->isa<Load>() && !use->isa<Store>())
             return escaping_[ptr] = true;
     }
 
     if (ptr->isa<Slot>()) {
-        while (true) {
+        std::queue<Def> queue;
+        queue.push(ptr);
+        while (!queue.empty()) {
+            auto ptr = pop(queue);
             assert(!escaping_.contains(ptr) || escaping_[ptr] != false);
-            escaping_[ptr] = true;
+            escaping_[ptr] = false;
             for (auto use : ptr->uses()) {
-                if (auto lea = use->isa<LEA>()) {
-                    ptr = lea;
-                    goto outer;
-                }
+                if (auto lea = use->isa<LEA>())
+                    queue.push(lea);
             }
-            break;
-outer:;
         }
     }
     return false;
@@ -111,7 +111,7 @@ void Mem2Reg::run() {
         for (auto primop : schedule_[lambda]) {
             auto def = Def(primop);
             if (auto slot = def->isa<Slot>()) {
-                if (!escapes(slot))
+                if (!escape_analysis(slot))
                     slot2handle_[slot] = cur_handle_++;
             } else if (auto load = def->isa<Load>()) {
                 if (!is_escaping(load->ptr()))
