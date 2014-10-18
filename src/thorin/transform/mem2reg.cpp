@@ -45,7 +45,22 @@ bool Mem2Reg::escapes(Def ptr) {
         } else if (!use->isa<Load>() && !use->isa<Store>())
             return escaping_[ptr] = true;
     }
-    return escaping_[ptr] = false;
+
+    if (ptr->isa<Slot>()) {
+        while (true) {
+            assert(!escaping_.contains(ptr) || escaping_[ptr] != false);
+            escaping_[ptr] = true;
+            for (auto use : ptr->uses()) {
+                if (auto lea = use->isa<LEA>()) {
+                    ptr = lea;
+                    goto outer;
+                }
+            }
+            break;
+outer:;
+        }
+    }
+    return false;
 }
 
 bool Mem2Reg::is_escaping(Def ptr) {
@@ -88,7 +103,7 @@ void Mem2Reg::run() {
     }
 
     // ... except top-level lambdas
-    scope().entry()->set_parent(0);
+    scope().entry()->set_parent(nullptr);
     scope().entry()->seal();
 
     for (auto lambda : scope()) {
