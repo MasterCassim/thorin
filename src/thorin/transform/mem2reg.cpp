@@ -42,25 +42,27 @@ bool Mem2Reg::escape_analysis(Def ptr) {
     for (auto use : ptr->uses()) {
         if (auto lea = use->isa<LEA>()) {
             if (escape_analysis(lea))
-                return escaping_[ptr] = true;
+                goto mark_escaping;
         } else if (!use->isa<Load>() && !use->isa<Store>())
-            return escaping_[ptr] = true;
+            goto mark_escaping;
     }
 
+    return escaping_[ptr] = false;
+
+mark_escaping:
     if (ptr->isa<Slot>()) {
         std::queue<Def> queue;
         queue.push(ptr);
         while (!queue.empty()) {
             auto ptr = pop(queue);
-            assert(!escaping_.contains(ptr) || escaping_[ptr] != false);
-            escaping_[ptr] = false;
+            escaping_[ptr] = true;
             for (auto use : ptr->uses()) {
                 if (auto lea = use->isa<LEA>())
                     queue.push(lea);
             }
         }
     }
-    return false;
+    return true;
 }
 
 bool Mem2Reg::is_escaping(Def ptr) {
