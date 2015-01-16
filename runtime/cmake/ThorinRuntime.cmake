@@ -1,10 +1,32 @@
 include(CMakeParseArguments)
 
 # find impala
-find_file(IMPALA_BIN impala)
+find_program(IMPALA_BIN impala)
 IF (NOT IMPALA_BIN)
     message(FATAL_ERROR "Could not find impala binary, it has to be in the PATH")
 ENDIF()
+
+# find python for post-patcher.py
+find_package(PythonInterp REQUIRED)
+message(STATUS "Python found: ${PYTHON_VERSION_STRING}")
+set(PYTHON_BIN ${PYTHON_EXECUTABLE})
+
+# find opt and llc for compiling llvm bitcode
+find_package(LLVM REQUIRED)
+find_program(LLVM_OPT_BIN opt
+    PATHS
+        ${LLVM_TOOLS_BINARY_DIR}
+        ${LLVM_DIR}
+    PATH_SUFFIXES
+        ${CMAKE_CONFIGURATION_TYPES}
+)
+find_program(LLVM_LLC_BIN llc
+    PATHS
+        ${LLVM_TOOLS_BINARY_DIR}
+        ${LLVM_DIR}
+    PATH_SUFFIXES
+        ${CMAKE_CONFIGURATION_TYPES}
+)
 
 macro(THORIN_RUNTIME_WRAP outfiles outlibs)
     CMAKE_PARSE_ARGUMENTS("TRW" "MAIN" "RTTYPE" "FILES" ${ARGN})
@@ -77,13 +99,14 @@ macro(THORIN_RUNTIME_WRAP outfiles outlibs)
     # add all input files as one impala job
     get_filename_component(_basename ${_lastfile} NAME_WE)
     set(_llfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.ll)
+    set(_optllfile ${CMAKE_CURRENT_BINARY_DIR}/opt_${_basename}.ll)
     set(_objfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.o)
     # tell cmake what to do
     add_custom_command(OUTPUT ${_llfile}
         COMMAND ${IMPALA_BIN} ${_impala_platform} ${_infiles} -emit-llvm -O3
-        COMMAND ${THORIN_RUNTIME_DIR}/post-patcher ${TRW_RTTYPE} ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
+        COMMAND ${PYTHON_BIN} ${THORIN_RUNTIME_DIR}/post-patcher.py ${TRW_RTTYPE} ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${IMPALA_BIN} ${THORIN_RUNTIME_DIR}/post-patcher ${_impala_platform} ${_infiles} VERBATIM)
+        DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${THORIN_RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
     IF("${TRW_RTTYPE}" STREQUAL "spir")
         set(_spirfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.spir)
         set(_bcfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.spir.bc)
@@ -92,7 +115,9 @@ macro(THORIN_RUNTIME_WRAP outfiles outlibs)
             DEPENDS ${_spirfile} VERBATIM)
     ENDIF()
     add_custom_command(OUTPUT ${_objfile}
-        COMMAND clang++ -O3 -g -c -o ${_objfile} ${_llfile}
+        # COMMAND clang++ -O3 -g -c -o ${_objfile} ${_llfile}
+        COMMAND ${LLVM_OPT_BIN} -std-compile-opts -o ${_optllfile} ${_llfile}
+        COMMAND ${LLVM_LLC_BIN} -O3 -filetype=obj -o ${_objfile} ${_optllfile}
         DEPENDS ${_llfile} VERBATIM)
     SET_SOURCE_FILES_PROPERTIES(
         ${_objfile}
