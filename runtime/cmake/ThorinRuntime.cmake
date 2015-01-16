@@ -11,6 +11,23 @@ find_package(PythonInterp REQUIRED)
 message(STATUS "Python found: ${PYTHON_VERSION_STRING}")
 set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 
+# find opt and llc for compiling llvm bitcode
+find_package(LLVM REQUIRED)
+find_program(LLVM_OPT_BIN opt
+    PATHS
+        ${LLVM_TOOLS_BINARY_DIR}
+        ${LLVM_DIR}
+    PATH_SUFFIXES
+        ${CMAKE_CONFIGURATION_TYPES}
+)
+find_program(LLVM_LLC_BIN llc
+    PATHS
+        ${LLVM_TOOLS_BINARY_DIR}
+        ${LLVM_DIR}
+    PATH_SUFFIXES
+        ${CMAKE_CONFIGURATION_TYPES}
+)
+
 macro(THORIN_RUNTIME_WRAP outfiles outlibs)
     CMAKE_PARSE_ARGUMENTS("TRW" "MAIN" "RTTYPE" "FILES" ${ARGN})
     IF(NOT "${TRW_UNPARSED_ARGUMENTS}" STREQUAL "")
@@ -82,6 +99,7 @@ macro(THORIN_RUNTIME_WRAP outfiles outlibs)
     # add all input files as one impala job
     get_filename_component(_basename ${_lastfile} NAME_WE)
     set(_llfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.ll)
+    set(_optllfile ${CMAKE_CURRENT_BINARY_DIR}/opt_${_basename}.ll)
     set(_objfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.o)
     # tell cmake what to do
     add_custom_command(OUTPUT ${_llfile}
@@ -97,7 +115,9 @@ macro(THORIN_RUNTIME_WRAP outfiles outlibs)
             DEPENDS ${_spirfile} VERBATIM)
     ENDIF()
     add_custom_command(OUTPUT ${_objfile}
-        COMMAND clang++ -O3 -g -c -o ${_objfile} ${_llfile}
+        # COMMAND clang++ -O3 -g -c -o ${_objfile} ${_llfile}
+        COMMAND ${LLVM_OPT_BIN} -std-compile-opts -o ${_optllfile} ${_llfile}
+        COMMAND ${LLVM_LLC_BIN} -O3 -filetype=obj -o ${_objfile} ${_optllfile}
         DEPENDS ${_llfile} VERBATIM)
     SET_SOURCE_FILES_PROPERTIES(
         ${_objfile}

@@ -7,6 +7,10 @@ extern "C" {
     long long thorin_get_micro_time();
     void thorin_print_micro_time(long long);
     void thorin_print_gflops(float);
-} 
+
+#ifdef _MSC_VER
+    double drand48();
+#endif // _MSC_VER
+}
 
 #endif
