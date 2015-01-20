@@ -13,30 +13,18 @@
 
 // common implementations of runtime utility functions
 
-#ifdef _MSC_VER // VS does not even have type struct timespec
+#ifdef _MSC_VER
 
-#include "Windows.h"
+// c++11-compliant implementation
+// TODO: validate cross platform and remove platform-dependent implementations
+#include <chrono>
 
-struct clock_sync {
-    long long TICKS_PER_MICRO_SECOND;
-
-    clock_sync() {
-        LARGE_INTEGER f;
-        if (!QueryPerformanceFrequency(&f)) {
-            TICKS_PER_MICRO_SECOND = 1;
-            return;
-        }
-        TICKS_PER_MICRO_SECOND = f.QuadPart / 1000000LL;
-    }
-};
-
-static clock_sync CLOCK;
+typedef std::chrono::high_resolution_clock hires_clock;
+static hires_clock::time_point epoch = hires_clock::now();
 
 long long thorin_get_micro_time() {
-    LARGE_INTEGER tc;
-    if (!QueryPerformanceCounter(&tc))
-        return 0;
-    return tc.QuadPart / CLOCK.TICKS_PER_MICRO_SECOND;
+    hires_clock::duration d = hires_clock::now() - epoch;
+    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
 #else // _MSC_VER

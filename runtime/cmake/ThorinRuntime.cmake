@@ -13,14 +13,21 @@ set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 
 # find opt and llc for compiling llvm bitcode
 find_package(LLVM REQUIRED)
-find_program(LLVM_OPT_BIN opt
-    PATHS
-        ${LLVM_TOOLS_BINARY_DIR}
-        ${LLVM_DIR}
-    PATH_SUFFIXES
-        ${CMAKE_CONFIGURATION_TYPES}
-)
-find_program(LLVM_LLC_BIN llc
+# find_program(LLVM_OPT_BIN opt
+    # PATHS
+        # ${LLVM_TOOLS_BINARY_DIR}
+        # ${LLVM_DIR}
+    # PATH_SUFFIXES
+        # ${CMAKE_CONFIGURATION_TYPES}
+# )
+# find_program(LLVM_LLC_BIN llc
+    # PATHS
+        # ${LLVM_TOOLS_BINARY_DIR}
+        # ${LLVM_DIR}
+    # PATH_SUFFIXES
+        # ${CMAKE_CONFIGURATION_TYPES}
+# )
+find_program(CLANG_BIN clang++
     PATHS
         ${LLVM_TOOLS_BINARY_DIR}
         ${LLVM_DIR}
@@ -99,7 +106,7 @@ macro(THORIN_RUNTIME_WRAP outfiles outlibs)
     # add all input files as one impala job
     get_filename_component(_basename ${_lastfile} NAME_WE)
     set(_llfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.ll)
-    set(_optllfile ${CMAKE_CURRENT_BINARY_DIR}/opt_${_basename}.ll)
+    # set(_optllfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}_optimized.ll)
     set(_objfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.o)
     # tell cmake what to do
     add_custom_command(OUTPUT ${_llfile}
@@ -111,13 +118,15 @@ macro(THORIN_RUNTIME_WRAP outfiles outlibs)
         set(_spirfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.spir)
         set(_bcfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.spir.bc)
         add_custom_command(OUTPUT ${_bcfile}
+            # TODO: use LLVM_AS_BIN instead
             COMMAND llvm-as ${_spirfile}
             DEPENDS ${_spirfile} VERBATIM)
     ENDIF()
     add_custom_command(OUTPUT ${_objfile}
-        # COMMAND clang++ -O3 -g -c -o ${_objfile} ${_llfile}
-        COMMAND ${LLVM_OPT_BIN} -std-compile-opts -o ${_optllfile} ${_llfile}
-        COMMAND ${LLVM_LLC_BIN} -O3 -filetype=obj -o ${_objfile} ${_optllfile}
+        # TODO: check difference between invocation of clang++ and opt/llc
+        COMMAND ${CLANG_BIN} -O3 -g -c -o ${_objfile} ${_llfile}
+        # COMMAND ${LLVM_OPT_BIN} -std-compile-opts -o ${_optllfile} ${_llfile}
+        # COMMAND ${LLVM_LLC_BIN} -O3 -filetype=obj -o ${_objfile} ${_optllfile}
         DEPENDS ${_llfile} VERBATIM)
     SET_SOURCE_FILES_PROPERTIES(
         ${_objfile}
@@ -125,4 +134,7 @@ macro(THORIN_RUNTIME_WRAP outfiles outlibs)
         EXTERNAL_OBJECT true
         GENERATED true)
     set(${outfiles} ${${outfiles}} ${_objfile} ${_bcfile})
+    # add impala source files to project to ease editing
+    set(${outfiles} ${${outfiles}} ${_infiles})
+    source_group("Impala Files" FILES ${_infiles})
 endmacro()
