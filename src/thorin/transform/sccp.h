@@ -3,6 +3,8 @@
 
 namespace thorin {
 
+class World;
+
 void sccp(World&);
 
 }
