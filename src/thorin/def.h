@@ -5,6 +5,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <thorin/analyses/bta.h>
 
 #include "thorin/enums.h"
 #include "thorin/type.h"
@@ -109,6 +110,7 @@ protected:
         , representative_(this)
         , gid_(gid)
         , name(name)
+        , lattice_value(LV())
     {}
     virtual ~DefNode() {}
 
@@ -160,6 +162,10 @@ public:
     template<class T> inline T primlit_value() const; // implementation in literal.h
     virtual Def rebuild() const { return this; }
 
+    // BTA
+    LV get_lattice() const;
+    void join_lattice(LV other) const;
+
 private:
     const NodeKind kind_;
     std::vector<Def> ops_;
@@ -169,6 +175,9 @@ private:
     mutable DefSet representatives_of_;
     const size_t gid_;
     mutable uint32_t candidate_ = 0;
+
+    // BTA
+    mutable LV lattice_value;
 
 public:
     mutable std::string name; ///< Just do what ever you want with this field.

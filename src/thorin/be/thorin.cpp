@@ -20,10 +20,12 @@ public:
     std::ostream& emit_type_elems(Type);
     std::ostream& emit_type(Type);
     std::ostream& emit_name(Def);
+    std::ostream& emit_name_bta(Def);
     std::ostream& emit_def(Def);
     std::ostream& emit_primop(const PrimOp*);
     std::ostream& emit_assignment(const PrimOp*);
     std::ostream& emit_head(const Lambda*);
+    std::ostream& emit_head_bta(const Lambda*);
     std::ostream& emit_jump(const Lambda*);
 };
 
@@ -128,6 +130,20 @@ std::ostream& CodeGen::emit_name(Def def) {
     return stream();
 }
 
+std::ostream& CodeGen::emit_name_bta(Def def) {
+    if (is_fancy()) // elide white = 0 and black = 7
+        color(def->gid() % 6 + 30 + 1);
+
+    stream() << def->unique_name();
+    stream() << " : ";
+    stream() << def->get_lattice().dump();
+
+    if (is_fancy())
+        reset_color();
+
+    return stream();
+}
+
 std::ostream& CodeGen::emit_primop(const PrimOp* primop) {
     if (primop->is_proxy())
         stream() << "<proxy>";
@@ -189,6 +205,19 @@ std::ostream& CodeGen::emit_assignment(const PrimOp* primop) {
 }
 
 std::ostream& CodeGen::emit_head(const Lambda* lambda) {
+    emit_name_bta(lambda);
+    emit_type_vars(lambda->type());
+    dump_list([&](const Param* param) { emit_type(param->type()) << " "; emit_name_bta(param); }, lambda->params(), "(", ")");
+
+    if (lambda->is_external())
+        stream() << " extern ";
+    if (lambda->cc() == CC::Device)
+        stream() << " device ";
+
+    return up();
+}
+
+std::ostream& CodeGen::emit_head_bta(const Lambda* lambda) {
     emit_name(lambda);
     emit_type_vars(lambda->type());
     dump_list([&](const Param* param) { emit_type(param->type()) << " "; emit_name(param); }, lambda->params(), "(", ")");
@@ -230,6 +259,25 @@ void emit_thorin(const Scope& scope, bool fancy, bool nocolor) {
     cg.newline();
 }
 
+void emit_bta(const Scope& scope, bool fancy, bool nocolor) {
+    CodeGen cg(fancy, nocolor);
+    auto schedule = schedule_smart(scope);
+    auto bbs = bb_schedule(scope);
+    for (auto lambda : bbs) {
+        int depth = lambda == scope.entry() ? 0 : 1;
+        cg.indent += depth;
+        cg.newline();
+        cg.emit_head_bta(lambda);
+
+        for (auto op : schedule[lambda])
+            cg.emit_assignment(op);
+
+        cg.emit_jump(lambda);
+        cg.indent -= depth;
+    }
+    cg.newline();
+}
+
 void emit_thorin(const World& world, bool fancy, bool nocolor) {
     CodeGen cg(fancy, nocolor);
     cg.stream() << "module '" << world.name() << "'\n\n";
@@ -240,6 +288,18 @@ void emit_thorin(const World& world, bool fancy, bool nocolor) {
     }
 
     Scope::for_each<false>(world, [&] (const Scope& scope) { emit_thorin(scope, fancy, nocolor); });
+}
+
+void emit_bta(const World& world, bool fancy, bool nocolor) {
+    CodeGen cg(fancy, nocolor);
+    cg.stream() << "module '" << world.name() << "'\n\n";
+
+    for (auto primop : world.primops()) {
+        if (auto global = primop->isa<Global>())
+            cg.emit_assignment(global);
+    }
+
+    Scope::for_each<false>(world, [&] (const Scope& scope) { emit_bta(scope, fancy, nocolor); });
 }
 
 void emit_type(Type type)                  { CodeGen(false).emit_type(type);         }

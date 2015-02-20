@@ -21,6 +21,7 @@ struct LV {
     LV(Type const t) : type(t) { }
 
     LV join(LV other) const;
+    std::string dump() const;
 };
 
 void bta(World&);

@@ -11,6 +11,14 @@ LV LV::join(LV other) const {
     return LV(Type(type | other.type));
 }
 
+std::string LV::dump() const {
+	if(type == Static) {
+		return "Static";
+	}
+
+	return "Dynamic";
+}
+
 void debug(World& world) {
 	/*for(auto lambda : world.lambdas()) {
 		std::cout << lambda->unique_name() << " (";

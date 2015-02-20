@@ -181,6 +181,14 @@ void DefNode::dump() const {
     }
 }
 
+LV DefNode::get_lattice() const {
+    return lattice_value;
+}
+
+void DefNode::join_lattice(LV other) const {
+    lattice_value = lattice_value.join(other);
+}
+
 World& DefNode::world() const { return type()->world(); }
 Def DefNode::op(Def def) const { return op(def->primlit_value<size_t>()); }
 Lambda* DefNode::as_lambda() const { return const_cast<Lambda*>(scast<Lambda>(this)); }

@@ -16,6 +16,8 @@ void emit_assignment(const PrimOp*);
 void emit_head(const Lambda*);
 void emit_jump(const Lambda*);
 
+void emit_bta(const Scope&, bool fancy = true, bool colored = false);
+void emit_bta(const World&, bool fancy = true, bool colored = false);
 }
 
 #endif
