@@ -874,4 +874,8 @@ void World::opt() {
     cleanup();
 }
 
+void World::bta() {
+    bta(*this);
+    cleanup();
+}
 }
