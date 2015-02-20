@@ -24,6 +24,7 @@ struct LV {
 };
 
 void bta(World&);
+void debug(World&);
 
 }
 
