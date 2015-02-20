@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thorin/be/thorin.h>
 #include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
 #include "thorin/lambda.h"
@@ -22,7 +23,7 @@ void debug(World& world) {
 		std::cout << "\t";
 		lambda->to().dump();
 	}*/
-	world.dump();
+	emit_thorin(world, true, false);
 }
 
 void bta(World& world) {
