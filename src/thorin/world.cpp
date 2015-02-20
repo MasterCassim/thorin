@@ -875,6 +875,19 @@ void World::opt() {
 }
 
 void World::run_bta() {
+    cleanup();
+    //partial_evaluation(*this);
+    merge_lambdas(*this);
+    cleanup();
+    lower2cff(*this);
+    clone_bodies(*this);
+    mem2reg(*this);
+    memmap_builtins(*this);
+    lift_builtins(*this);
+    inliner(*this);
+    merge_lambdas(*this);
+    lift_enters(*this);
+    dead_load_opt(*this);
     bta(*this);
     cleanup();
 }
