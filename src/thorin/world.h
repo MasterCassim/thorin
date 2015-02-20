@@ -227,7 +227,7 @@ public:
     /// Performs dead code, unreachable code and unused type elimination.
     void cleanup();
     void opt();
-    void bta();
+    void run_bta();
 
     // getters
 
