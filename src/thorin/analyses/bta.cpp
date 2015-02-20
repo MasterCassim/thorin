@@ -12,12 +12,12 @@ LV LV::join(LV other) const {
 
 void debug(World& world) {
 	for(auto lambda : world.lambdas()) {
-		/*std::cout << lambda->unique_name() << " (";
+		std::cout << lambda->unique_name() << " (";
 		for(auto param : lambda->params()) {
 			std::cout << param->unique_name() << ",";
 		}
-		std::cout << ")" << std::endl;*/
-		lambda->dump();
+		std::cout << ")" << std::endl;
+		lambda->dump_jump();
 	}
 }
 
