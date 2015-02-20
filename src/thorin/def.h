@@ -109,8 +109,9 @@ protected:
         , type_(type)
         , representative_(this)
         , gid_(gid)
-        , name(name)
         , lattice_value(LV())
+        , name(name)
+
     {}
     virtual ~DefNode() {}
 
