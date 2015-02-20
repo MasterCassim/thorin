@@ -17,6 +17,7 @@ void debug(World& world) {
 			std::cout << param->unique_name() << ",";
 		}
 		std::cout << ")" << std::endl;
+		std::cout << "\t";
 		lambda->dump_jump();
 	}
 }
