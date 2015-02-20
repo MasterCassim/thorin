@@ -1,5 +1,4 @@
-#include <iostream>
-
+#include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
 #include "thorin/lambda.h"
 #include "thorin/world.h"
@@ -7,10 +6,11 @@
 
 namespace thorin {
 
+LV LV::join(LV other) const {
+    return LV(Type(type | other.type));
+}
+
 void bta(World& world) {
-	std::cout << "Running bta:" << std::endl;
-	//auto lambdas = world.lambdas;
-	
 }
 
 }
