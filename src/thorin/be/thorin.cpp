@@ -135,11 +135,12 @@ std::ostream& CodeGen::emit_name_bta(Def def) {
         color(def->gid() % 6 + 30 + 1);
 
     stream() << def->unique_name();
-    stream() << " : ";
-    stream() << def->get_lattice().dump();
 
     if (is_fancy())
         reset_color();
+
+    stream() << " : ";
+    stream() << def->get_lattice().dump();
 
     return stream();
 }
@@ -205,9 +206,9 @@ std::ostream& CodeGen::emit_assignment(const PrimOp* primop) {
 }
 
 std::ostream& CodeGen::emit_head(const Lambda* lambda) {
-    emit_name_bta(lambda);
+    emit_name(lambda);
     emit_type_vars(lambda->type());
-    dump_list([&](const Param* param) { emit_type(param->type()) << " "; emit_name_bta(param); }, lambda->params(), "(", ")");
+    dump_list([&](const Param* param) { emit_type(param->type()) << " "; emit_name(param); }, lambda->params(), "(", ")");
 
     if (lambda->is_external())
         stream() << " extern ";
@@ -218,9 +219,9 @@ std::ostream& CodeGen::emit_head(const Lambda* lambda) {
 }
 
 std::ostream& CodeGen::emit_head_bta(const Lambda* lambda) {
-    emit_name(lambda);
+    emit_name_bta(lambda);
     emit_type_vars(lambda->type());
-    dump_list([&](const Param* param) { emit_type(param->type()) << " "; emit_name(param); }, lambda->params(), "(", ")");
+    dump_list([&](const Param* param) { emit_type(param->type()) << " "; emit_name_bta(param); }, lambda->params(), "(", ")");
 
     if (lambda->is_external())
         stream() << " extern ";

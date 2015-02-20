@@ -19,7 +19,7 @@ std::string LV::dump() const {
 	return "Dynamic";
 }
 
-void debug(World& world) {
+void debug(World& world, bool bta) {
 	/*for(auto lambda : world.lambdas()) {
 		std::cout << lambda->unique_name() << " (";
 		for(auto param : lambda->params()) {
@@ -31,12 +31,19 @@ void debug(World& world) {
 		std::cout << "\t";
 		lambda->to().dump();
 	}*/
-	emit_thorin(world, true, true);
+	if(bta) {
+		emit_bta(world, true, true);
+	} else {
+		emit_thorin(world, true, false);
+	}
 }
 
 void bta(World& world) {
 	std::cout << "Running bta on the following world:" << std::endl;
-	debug(world);
+	debug(world, false);
+
+	std::cout << "Resulting annotated world:" << std::endl;
+	debug(world, true);
 }
 
 }
