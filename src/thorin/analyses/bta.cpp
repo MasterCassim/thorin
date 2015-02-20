@@ -23,7 +23,7 @@ void debug(World& world) {
 		std::cout << "\t";
 		lambda->to().dump();
 	}*/
-	emit_thorin(world, true, false);
+	emit_thorin(world, true, true);
 }
 
 void bta(World& world) {
