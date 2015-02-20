@@ -34,7 +34,7 @@ void debug(World& world, bool bta) {
 	if(bta) {
 		emit_bta(world, true, true);
 	} else {
-		emit_thorin(world, true, false);
+		emit_thorin(world, true, true);
 	}
 }
 
