@@ -1,3 +1,4 @@
+#include <iostream>
 #include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
 #include "thorin/lambda.h"
@@ -11,6 +12,7 @@ LV LV::join(LV other) const {
 }
 
 void bta(World& world) {
+	std::cout << "Running bta:" << std::endl;
 }
 
 }
