@@ -11,7 +11,7 @@ LV LV::join(LV other) const {
 }
 
 void debug(World& world) {
-	for(auto lambda : world.lambdas()) {
+	/*for(auto lambda : world.lambdas()) {
 		std::cout << lambda->unique_name() << " (";
 		for(auto param : lambda->params()) {
 			std::cout << param->unique_name() << ",";
@@ -19,7 +19,10 @@ void debug(World& world) {
 		std::cout << ")" << std::endl;
 		std::cout << "\t";
 		lambda->dump_jump();
-	}
+		std::cout << "\t";
+		lambda->to().dump();
+	}*/
+	world.dump();
 }
 
 void bta(World& world) {
