@@ -163,7 +163,7 @@ public:
     template<class T> inline T primlit_value() const; // implementation in literal.h
     virtual Def rebuild() const { return this; }
 
-    // BTA
+    // BTA - stuff
     LV get_lattice() const;
     bool join_lattice(LV other) const;
 
@@ -177,7 +177,7 @@ private:
     const size_t gid_;
     mutable uint32_t candidate_ = 0;
 
-    // BTA
+    // BTA - stuff
     mutable LV lattice_value;
 
 public:

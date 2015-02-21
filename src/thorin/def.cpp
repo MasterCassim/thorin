@@ -181,6 +181,14 @@ void DefNode::dump() const {
     }
 }
 
+World& DefNode::world() const { return type()->world(); }
+Def DefNode::op(Def def) const { return op(def->primlit_value<size_t>()); }
+Lambda* DefNode::as_lambda() const { return const_cast<Lambda*>(scast<Lambda>(this)); }
+Lambda* DefNode::isa_lambda() const { return const_cast<Lambda*>(dcast<Lambda>(this)); }
+int DefNode::order() const { return type()->order(); }
+size_t DefNode::length() const { return type().as<VectorType>()->length(); }
+
+// BTA - stuff
 LV DefNode::get_lattice() const {
     return lattice_value;
 }
@@ -193,13 +201,6 @@ bool DefNode::join_lattice(LV other) const {
     lattice_value = lattice_value.join(other);
     return last_type != lattice_value.type;
 }
-
-World& DefNode::world() const { return type()->world(); }
-Def DefNode::op(Def def) const { return op(def->primlit_value<size_t>()); }
-Lambda* DefNode::as_lambda() const { return const_cast<Lambda*>(scast<Lambda>(this)); }
-Lambda* DefNode::isa_lambda() const { return const_cast<Lambda*>(dcast<Lambda>(this)); }
-int DefNode::order() const { return type()->order(); }
-size_t DefNode::length() const { return type().as<VectorType>()->length(); }
 
 //------------------------------------------------------------------------------
 

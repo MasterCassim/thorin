@@ -8,7 +8,7 @@
 namespace thorin {
 
 LV LV::join(LV other) const {
-	// TODO: don't always allocate a new LV here?
+    // TODO: don't always allocate a new LV here?
     return LV(Type(type | other.type));
 }
 
@@ -16,22 +16,22 @@ LV LV::join(LV other) const {
  *  Method used to print a lattice value.
  */
 std::string LV::dump() const {
-	if(type == Static) {
-		return "Static";
-	}
+    if(type == Static) {
+        return "Static";
+    }
 
-	return "Dynamic";
+    return "Dynamic";
 }
 
 /*
  *  Print the thorin program with or without bta information.
  */
 void debug(World& world, bool bta) {
-	if(bta) {
-		emit_bta(world, true, true);
-	} else {
-		emit_thorin(world, true, true);
-	}
+    if(bta) {
+        emit_bta(world, true, true);
+    } else {
+        emit_thorin(world, true, true);
+    }
 }
 
 /*
@@ -39,138 +39,138 @@ void debug(World& world, bool bta) {
  *  Returns true if something has changed.
  */
 bool handle(const Def& def) {
-	bool changed = false;
+    bool changed = false;
 
-	if (auto primop = def->isa<PrimOp>()) {
-		for (auto op : primop->ops()) {
-			changed |= handle(op);
-			changed |= def->join_lattice(op->get_lattice());
-		}
-	} else if(def->isa<Param>() || def->isa_lambda()) {
-		// nothing to do in this case
-	} else {
-		// TODO: anything other to consider here?
-		std::cerr << "Unknown / not handled definition found!" << std::endl;
+    if (auto primop = def->isa<PrimOp>()) {
+        for (auto op : primop->ops()) {
+            changed |= handle(op);
+            changed |= def->join_lattice(op->get_lattice());
+        }
+    } else if(def->isa<Param>() || def->isa_lambda()) {
+        // nothing to do in this case
+    } else {
+        // TODO: anything other to consider here?
+        std::cerr << "Unknown / not handled definition found!" << std::endl;
 
-		auto def2 = def.deref();
+        auto def2 = def.deref();
 
-		// just overapproximate with dynamic
-		changed |= def2->join_lattice(DYNAMIC);
+        // just overapproximate with dynamic
+        changed |= def2->join_lattice(LV_DYNAMIC);
 
-		for(auto op : def2->ops()) {
-			changed |= handle(op);
-		}
-	}
+        for(auto op : def2->ops()) {
+            changed |= handle(op);
+        }
+    }
 
-	return changed;
+    return changed;
 }
 
 /*
  *  Method forwarding information from one lambda to another.
  */
 bool forward(Lambda& from, const Def& to) {
-	bool changed = false;
+    bool changed = false;
 
-	for(unsigned int i = 0; i < from.num_args(); i++) {
-		changed |= handle(from.arg(i));
-	}
+    for(unsigned int i = 0; i < from.num_args(); i++) {
+        changed |= handle(from.arg(i));
+    }
 
-	if(auto to_lambda = to->isa_lambda()) {
-		std::cout << "\t\t" << "we have a lambda here!" << std::endl;
+    if(auto to_lambda = to->isa_lambda()) {
+        std::cout << "\t\t" << "we have a lambda here!" << std::endl;
 
-		if(from.num_args() != to_lambda->num_params()) {
-			std::cerr << "Number of arguments does not match number of params" << std::endl;
-		} else {
-			for(unsigned int i = 0; i < from.num_args(); i++) {
-				// the lattice value of the lambda is joined (control flow)
-				auto out = from.arg(i)->get_lattice().join(from.get_lattice());
+        if(from.num_args() != to_lambda->num_params()) {
+            std::cerr << "Number of arguments does not match number of params" << std::endl;
+        } else {
+            for(unsigned int i = 0; i < from.num_args(); i++) {
+                // the lattice value of the lambda is joined (control flow)
+                auto out = from.arg(i)->get_lattice().join(from.get_lattice());
 
-				changed |= to_lambda->param(i)->join_lattice(out);
-			}
-		}
-	} else if(to->isa<Param>()) {
-		// TODO: do we want to / can / should handle calling functions?
-		//param->join_lattice(LV(LV::Dynamic));
-	} else {
-		std::cerr << "Definition has not handled type" << std::endl;
+                changed |= to_lambda->param(i)->join_lattice(out);
+            }
+        }
+    } else if(to->isa<Param>()) {
+        // TODO: do we want to / can / should handle calling functions?
+        //param->join_lattice(LV(LV::Dynamic));
+    } else {
+        std::cerr << "Definition has not handled type" << std::endl;
 
-		// overapproximate in this case
-		changed |= to.deref()->join_lattice(DYNAMIC);
-		for(auto op : to.deref()->ops()) {
-			changed |= op->join_lattice(DYNAMIC);
-		}
-	}
+        // overapproximate in this case
+        changed |= to.deref()->join_lattice(LV_DYNAMIC);
+        for(auto op : to.deref()->ops()) {
+            changed |= op->join_lattice(LV_DYNAMIC);
+        }
+    }
 
-	return changed;
+    return changed;
 }
 
 void bta(World& world) {
-	std::cout << "Running bta on the following world:" << std::endl;
-	debug(world, false);
+    std::cout << "Running bta on the following world:" << std::endl;
+    debug(world, false);
 
-	// all global variables are dynamic by default
-	for (auto primop : world.primops()) {
-		if (auto global = primop->isa<Global>())
-			global->join_lattice(DYNAMIC);
-	}
+    // all global variables are dynamic by default
+    for (auto primop : world.primops()) {
+        if (auto global = primop->isa<Global>())
+            global->join_lattice(LV_DYNAMIC);
+    }
 
-	// functions and arguments called from outside are dynamic
-	for(auto lambda : world.lambdas()) {
-		if(lambda->is_external() || lambda->cc() == CC::Device) {
-			//lambda->join_lattice(DYNAMIC);
+    // functions and arguments called from outside are dynamic
+    for(auto lambda : world.lambdas()) {
+        if(lambda->is_external() || lambda->cc() == CC::Device) {
+            //lambda->join_lattice(DYNAMIC);
 
-			for(auto param : lambda->params()) {
-				param->join_lattice(DYNAMIC);
-			}
-		}
-	}
+            for(auto param : lambda->params()) {
+                param->join_lattice(LV_DYNAMIC);
+            }
+        }
+    }
 
-	int i = 1;
-	bool changed;
-	do {
-		changed = false;
+    int i = 1;
+    bool changed;
+    do {
+        changed = false;
 
-		std::cout << "Starting with iteration " << i << std::endl;
+        std::cout << "Starting with iteration " << i << std::endl;
 
-		// just look at every lambda on its own
-		for(auto lambda : world.lambdas()) {
-			std::cout << "\t" << "looking at lambda: " << lambda->unique_name() << std::endl;
+        // just look at every lambda on its own
+        for(auto lambda : world.lambdas()) {
+            std::cout << "\t" << "looking at lambda: " << lambda->unique_name() << std::endl;
 
-			auto to = lambda->to();
-			if (auto primop = to->isa<PrimOp>()) {
-				changed |= handle(primop);
+            auto to = lambda->to();
+            if (auto primop = to->isa<PrimOp>()) {
+                changed |= handle(primop);
 
-				std::cout << "\t\t" << "we have a primop here! " << std::endl;
-				if(auto select = primop->isa<Select>()) {
-					std::cout << "\t\t" << "we have a select here!" << std::endl;
-					auto cond = select->op(0).deref();
-					auto lhs = select->op(1).deref();
-					auto rhs = select->op(2).deref();
+                std::cout << "\t\t" << "we have a primop here! " << std::endl;
+                if(auto select = primop->isa<Select>()) {
+                    std::cout << "\t\t" << "we have a select here!" << std::endl;
+                    auto cond = select->op(0).deref();
+                    auto lhs = select->op(1).deref();
+                    auto rhs = select->op(2).deref();
 
-					auto out = cond->get_lattice().join(lambda->get_lattice());
+                    auto out = cond->get_lattice().join(lambda->get_lattice());
 
-					// TODO: think about doing this in handle?! can we have something more complex here (not a lambda)?
-					changed |= lhs->join_lattice(out);
-					changed |= rhs->join_lattice(out);
+                    // TODO: think about doing this in handle?! can we have something more complex here (not a lambda)?
+                    changed |= lhs->join_lattice(out);
+                    changed |= rhs->join_lattice(out);
 
-					// we still have to forward argument lattice values
-					changed |= forward(*lambda, lhs);
-					changed |= forward(*lambda, rhs);
-				}
-			} else {
-				// just forward the information one to one
-				changed |= to->join_lattice(lambda->get_lattice());
-				changed |= forward(*lambda, to);
-			}
-		}
+                    // we still have to forward argument lattice values
+                    changed |= forward(*lambda, lhs);
+                    changed |= forward(*lambda, rhs);
+                }
+            } else {
+                // just forward the information one to one
+                changed |= to->join_lattice(lambda->get_lattice());
+                changed |= forward(*lambda, to);
+            }
+        }
 
-		i++;
+        i++;
 
-		std::cout << std::endl;
-	} while(changed);
+        std::cout << std::endl;
+    } while(changed);
 
-	std::cout << "Resulting annotated world:" << std::endl;
-	debug(world, true);
+    std::cout << "Resulting annotated world:" << std::endl;
+    debug(world, true);
 }
 
 }
