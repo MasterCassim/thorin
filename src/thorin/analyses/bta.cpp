@@ -74,8 +74,10 @@ void bta(World& world) {
 
 			auto to = lambda->to();
 			if (auto primop = to->isa<PrimOp>()) {
-				std::cout << "\t\t" << "we have a primop here!" << std::endl;
-				emit_def(primop);
+				std::cout << "\t\t" << "we have a primop here! " << primop->has_multiple_outs() << std::endl;
+				if(auto select = primop->isa<Select>()) {
+					std::cout << "\t\t" << "we have a select here!" << std::endl;
+				}
 			} else {
 				// just forward information
 				changed |= to->join_lattice(lambda->get_lattice());
