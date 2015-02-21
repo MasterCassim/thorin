@@ -55,6 +55,32 @@ bool handle(const Def& def) {
 	return changed;
 }
 
+bool forward(Lambda& from, const Def& to) {
+	bool changed = false;
+
+	if(auto to_lambda = to->isa_lambda()) {
+		std::cout << "\t\t" << "we have a lambda here!" << std::endl;
+
+		if(from.num_args() != to_lambda->num_params()) {
+			std::cerr << "Number of arguments does not match number of params" << std::endl;
+		} else {
+			for(unsigned int i = 0; i < from.num_args(); i++) {
+				auto arg = from.arg(i);
+
+				changed |= handle(arg);
+				changed |= to_lambda->param(i)->join_lattice(arg->get_lattice());
+			}
+		}
+	} else if(auto param = to->isa<Param>()) {
+		// TODO: do we want to handle calling functions?
+		to.deref()->join_lattice(LV(LV::Dynamic));
+	} else {
+		std::cerr << "Definition was not a lambda" << std::endl;
+	}
+
+	return changed;
+}
+
 void bta(World& world) {
 	std::cout << "Running bta on the following world:" << std::endl;
 	debug(world, false);
@@ -105,32 +131,21 @@ void bta(World& world) {
 					// TODO: think about doing this in handle?!
 					changed |= lhs->join_lattice(out);
 					changed |= rhs->join_lattice(out);
+
+					// we still have to forward arguments
+					changed |= forward(*lambda, lhs);
+					changed |= forward(*lambda, rhs);
 				}
 			} else {
 				// just forward information
 				changed |= to->join_lattice(lambda->get_lattice());
-
-				if(auto to_lambda = to->isa_lambda()) {
-					std::cout << "\t\t" << "we have a lambda here!" << std::endl;
-
-					if(lambda->num_args() != to_lambda->num_params()) {
-						std::cerr << "Number of arguments does not match number of params" << std::endl;
-					} else {
-						for(unsigned int i = 0; i < lambda->num_args(); i++) {
-							auto arg = lambda->arg(i);
-
-							changed |= handle(arg);
-							changed |= to_lambda->param(i)->join_lattice(arg->get_lattice());
-						}
-					}
-				}	 else {
-					std::cerr << "Definition was not a lambda" << std::endl;
-				}
-
+				changed |= forward(*lambda, to);
 			}
-
-			i++;
 		}
+
+		i++;
+
+		std::cout << std::endl;
 	} while(changed);
 
 	std::cout << "Resulting annotated world:" << std::endl;
