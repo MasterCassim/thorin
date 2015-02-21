@@ -64,7 +64,7 @@ void bta(World& world) {
 	int i = 1;
 	bool changed;
 	do {
-		bool changed = false;
+		changed = false;
 
 		std::cout << "Starting with iteration " << i << std::endl;
 
