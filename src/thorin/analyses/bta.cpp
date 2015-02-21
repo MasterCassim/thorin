@@ -1,6 +1,5 @@
 #include <iostream>
 #include <thorin/be/thorin.h>
-#include <thorin/tables/nodetable.h>
 #include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
 #include "thorin/lambda.h"
