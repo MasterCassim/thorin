@@ -78,7 +78,7 @@ void bta(World& world) {
 				emit_def(primop);
 			} else {
 				// just forward information
-				to->join_lattice(lambda->get_lattice());
+				changed |= to->join_lattice(lambda->get_lattice());
 
 				if(auto to_lambda = to->isa_lambda()) {
 					std::cout << "\t\t" << "we have a lambda here!" << std::endl;
@@ -87,7 +87,7 @@ void bta(World& world) {
 						std::cerr << "Number of arguments does not match number of params" << std::endl;
 					} else {
 						for(int i = 0; i < lambda->num_args(); i++) {
-							to_lambda->param(i)->join_lattice(lambda->arg(i)->get_lattice());
+							changed |= to_lambda->param(i)->join_lattice(lambda->arg(i)->get_lattice());
 						}
 					}
 				}	 else {
@@ -95,6 +95,8 @@ void bta(World& world) {
 				}
 
 			}
+
+			i++;
 		}
 	} while(changed);
 
