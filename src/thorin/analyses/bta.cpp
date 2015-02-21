@@ -86,7 +86,7 @@ void bta(World& world) {
 					if(lambda->num_args() != to_lambda->num_params()) {
 						std::cerr << "Number of arguments does not match number of params" << std::endl;
 					} else {
-						for(int i = 0; i < lambda->num_args(); i++) {
+						for(unsigned int i = 0; i < lambda->num_args(); i++) {
 							changed |= to_lambda->param(i)->join_lattice(lambda->arg(i)->get_lattice());
 						}
 					}
