@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thorin/be/thorin.h>
+#include <thorin/tables/nodetable.h>
 #include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
 #include "thorin/lambda.h"
@@ -38,6 +39,23 @@ void debug(World& world, bool bta) {
 	}
 }
 
+bool handle(const Def& def) {
+	bool changed = false;
+
+	if (auto primop = def->isa<PrimOp>()) {
+		for (auto op : primop->ops()) {
+			changed |= handle(op);
+			changed |= def->join_lattice(op->get_lattice());
+		}
+	} else if(def->isa<Param>() || def->isa_lambda()) {
+		// nothing to do in this case
+	} else {
+		std::cerr << "Unknown / not handled definition found!" << std::endl;
+	}
+
+	return changed;
+}
+
 void bta(World& world) {
 	std::cout << "Running bta on the following world:" << std::endl;
 	debug(world, false);
@@ -74,10 +92,20 @@ void bta(World& world) {
 
 			auto to = lambda->to();
 			if (auto primop = to->isa<PrimOp>()) {
-				std::cout << "\t\t" << "we have a primop here! " << primop->has_multiple_outs() << std::endl;
+				changed |= handle(primop);
+
+				std::cout << "\t\t" << "we have a primop here! " << std::endl;
 				if(auto select = primop->isa<Select>()) {
 					std::cout << "\t\t" << "we have a select here!" << std::endl;
-					select->ops();
+					auto cond = select->op(0).deref();
+					auto lhs = select->op(1).deref();
+					auto rhs = select->op(2).deref();
+
+					auto out = cond->get_lattice().join(lambda->get_lattice());
+
+					// TODO: think about doing this in handle?!
+					changed |= lhs->join_lattice(out);
+					changed |= rhs->join_lattice(out);
 				}
 			} else {
 				// just forward information
