@@ -24,6 +24,9 @@ struct LV {
     std::string dump() const;
 };
 
+LV DYNAMIC = LV(LV::Dynamic);
+LV STATIC = LV(LV::Static);
+
 void bta(World&);
 void debug(World&);
 
