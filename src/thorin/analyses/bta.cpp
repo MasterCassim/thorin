@@ -74,7 +74,7 @@ bool forward(Lambda& from, const Def& to) {
 				changed |= to_lambda->param(i)->join_lattice(out);
 			}
 		}
-	} else if(auto param = to->isa<Param>()) {
+	} else if(to->isa<Param>()) {
 		// TODO: do we want to handle calling functions?
 		//param->join_lattice(LV(LV::Dynamic));
 	} else {
