@@ -77,6 +77,7 @@ void bta(World& world) {
 				std::cout << "\t\t" << "we have a primop here! " << primop->has_multiple_outs() << std::endl;
 				if(auto select = primop->isa<Select>()) {
 					std::cout << "\t\t" << "we have a select here!" << std::endl;
+					select->ops();
 				}
 			} else {
 				// just forward information
