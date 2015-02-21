@@ -67,13 +67,16 @@ bool forward(Lambda& from, const Def& to) {
 			for(unsigned int i = 0; i < from.num_args(); i++) {
 				auto arg = from.arg(i);
 
+				// we have to take the lambda joined argument
+				auto out = arg->get_lattice().join(from.get_lattice());
+
 				changed |= handle(arg);
-				changed |= to_lambda->param(i)->join_lattice(arg->get_lattice());
+				changed |= to_lambda->param(i)->join_lattice(out);
 			}
 		}
 	} else if(auto param = to->isa<Param>()) {
 		// TODO: do we want to handle calling functions?
-		to.deref()->join_lattice(LV(LV::Dynamic));
+		//param->join_lattice(LV(LV::Dynamic));
 	} else {
 		std::cerr << "Definition was not a lambda" << std::endl;
 	}
