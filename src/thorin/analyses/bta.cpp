@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thorin/be/thorin.h>
+#include <thorin/tables/nodetable.h>
 #include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
 #include "thorin/lambda.h"
@@ -41,6 +42,30 @@ void debug(World& world, bool bta) {
 void bta(World& world) {
 	std::cout << "Running bta on the following world:" << std::endl;
 	debug(world, false);
+
+	LV DYNAMIC = LV(LV::Dynamic);
+
+	// set all global variables to dynamic
+	for (auto primop : world.primops()) {
+		if (auto global = primop->isa<Global>())
+			global->join_lattice(DYNAMIC);
+	}
+
+	// every extern function is dynamic with all parameters
+	for(auto lambda : world.lambdas()) {
+		if(lambda->is_external() || lambda->cc() == CC::Device) {
+			lambda->join_lattice(DYNAMIC);
+
+			for(auto param : lambda->params()) {
+				param->join_lattice(DYNAMIC);
+			}
+		}
+	}
+
+	bool changed = false;
+	do {
+		// do fixpoint iteration here
+	} while(changed);
 
 	std::cout << "Resulting annotated world:" << std::endl;
 	debug(world, true);

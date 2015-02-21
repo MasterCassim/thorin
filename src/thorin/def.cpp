@@ -185,8 +185,13 @@ LV DefNode::get_lattice() const {
     return lattice_value;
 }
 
-void DefNode::join_lattice(LV other) const {
+bool DefNode::join_lattice(LV other) const {
+    //if(lattice_value.type == LV::Dynamic || other.type == LV::Static) {
+    //    return false;
+    //}
+    LV::Type last_type = lattice_value.type;
     lattice_value = lattice_value.join(other);
+    return last_type != lattice_value.type;
 }
 
 World& DefNode::world() const { return type()->world(); }

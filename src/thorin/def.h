@@ -165,7 +165,7 @@ public:
 
     // BTA
     LV get_lattice() const;
-    void join_lattice(LV other) const;
+    bool join_lattice(LV other) const;
 
 private:
     const NodeKind kind_;

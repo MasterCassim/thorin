@@ -22,11 +22,14 @@ public:
     std::ostream& emit_name(Def);
     std::ostream& emit_name_bta(Def);
     std::ostream& emit_def(Def);
+    std::ostream& emit_def_bta(Def);
     std::ostream& emit_primop(const PrimOp*);
     std::ostream& emit_assignment(const PrimOp*);
+    std::ostream& emit_assignment_bta(const PrimOp*);
     std::ostream& emit_head(const Lambda*);
     std::ostream& emit_head_bta(const Lambda*);
     std::ostream& emit_jump(const Lambda*);
+    std::ostream& emit_jump_bta(const Lambda*);
 };
 
 //------------------------------------------------------------------------------
@@ -118,6 +121,12 @@ std::ostream& CodeGen::emit_def(Def def) {
     return emit_name(def);
 }
 
+std::ostream& CodeGen::emit_def_bta(Def def) {
+    if (auto primop = def->isa<PrimOp>())
+        return emit_primop(primop);
+    return emit_name_bta(def);
+}
+
 std::ostream& CodeGen::emit_name(Def def) {
     if (is_fancy()) // elide white = 0 and black = 7
         color(def->gid() % 6 + 30 + 1);
@@ -205,6 +214,24 @@ std::ostream& CodeGen::emit_assignment(const PrimOp* primop) {
     return newline();
 }
 
+std::ostream& CodeGen::emit_assignment_bta(const PrimOp* primop) {
+    emit_type(primop->type()) << " ";
+    emit_name_bta(primop) << " = ";
+
+    auto ops = primop->ops();
+    if (auto vectorop = primop->isa<VectorOp>()) {
+        if (!vectorop->cond()->is_allset()) {
+            stream() << "@ ";
+            emit_name_bta(vectorop->cond()) << " ";
+        }
+        ops = ops.slice_from_begin(1);
+    }
+
+    stream() << primop->op_name() << " ";
+    dump_list([&](Def def) { emit_def(def); }, ops);
+    return newline();
+}
+
 std::ostream& CodeGen::emit_head(const Lambda* lambda) {
     emit_name(lambda);
     emit_type_vars(lambda->type());
@@ -234,6 +261,14 @@ std::ostream& CodeGen::emit_head_bta(const Lambda* lambda) {
 std::ostream& CodeGen::emit_jump(const Lambda* lambda) {
     if (!lambda->empty()) {
         emit_def(lambda->to());
+        dump_list([&](Def def) { emit_def(def); }, lambda->args(), " ", "");
+    }
+    return down();
+}
+
+std::ostream& CodeGen::emit_jump_bta(const Lambda* lambda) {
+    if (!lambda->empty()) {
+        emit_def_bta(lambda->to());
         dump_list([&](Def def) { emit_def(def); }, lambda->args(), " ", "");
     }
     return down();
@@ -271,9 +306,9 @@ void emit_bta(const Scope& scope, bool fancy, bool nocolor) {
         cg.emit_head_bta(lambda);
 
         for (auto op : schedule[lambda])
-            cg.emit_assignment(op);
+            cg.emit_assignment_bta(op);
 
-        cg.emit_jump(lambda);
+        cg.emit_jump_bta(lambda);
         cg.indent -= depth;
     }
     cg.newline();
@@ -297,7 +332,7 @@ void emit_bta(const World& world, bool fancy, bool nocolor) {
 
     for (auto primop : world.primops()) {
         if (auto global = primop->isa<Global>())
-            cg.emit_assignment(global);
+            cg.emit_assignment_bta(global);
     }
 
     Scope::for_each<false>(world, [&] (const Scope& scope) { emit_bta(scope, fancy, nocolor); });
