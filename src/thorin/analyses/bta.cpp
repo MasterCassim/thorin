@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thorin/be/thorin.h>
+#include <thorin/tables/nodetable.h>
 #include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
 #include "thorin/lambda.h"
@@ -117,7 +118,10 @@ void bta(World& world) {
 						std::cerr << "Number of arguments does not match number of params" << std::endl;
 					} else {
 						for(unsigned int i = 0; i < lambda->num_args(); i++) {
-							changed |= to_lambda->param(i)->join_lattice(lambda->arg(i)->get_lattice());
+							auto arg = lambda->arg(i);
+
+							changed |= handle(arg);
+							changed |= to_lambda->param(i)->join_lattice(arg->get_lattice());
 						}
 					}
 				}	 else {
