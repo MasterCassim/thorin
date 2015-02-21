@@ -268,7 +268,7 @@ std::ostream& CodeGen::emit_jump(const Lambda* lambda) {
 
 std::ostream& CodeGen::emit_jump_bta(const Lambda* lambda) {
     if (!lambda->empty()) {
-        emit_def_bta(lambda->to());
+        emit_def(lambda->to());
         dump_list([&](Def def) { emit_def(def); }, lambda->args(), " ", "");
     }
     return down();

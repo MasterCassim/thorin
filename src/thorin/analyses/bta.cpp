@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thorin/be/thorin.h>
+#include <thorin/tables/nodetable.h>
 #include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
 #include "thorin/lambda.h"
@@ -53,7 +54,7 @@ void bta(World& world) {
 	// every extern function is dynamic with all parameters
 	for(auto lambda : world.lambdas()) {
 		if(lambda->is_external() || lambda->cc() == CC::Device) {
-			lambda->join_lattice(DYNAMIC);
+			//lambda->join_lattice(DYNAMIC);
 
 			for(auto param : lambda->params()) {
 				param->join_lattice(DYNAMIC);
@@ -61,9 +62,41 @@ void bta(World& world) {
 		}
 	}
 
-	bool changed = false;
+	int i = 1;
+	bool changed;
 	do {
+		bool changed = false;
+
+		std::cout << "Starting with iteration " << i << std::endl;
+
 		// do fixpoint iteration here
+		for(auto lambda : world.lambdas()) {
+			std::cout << "\t" << "looking at lambda: " << lambda->unique_name() << std::endl;
+
+			auto to = lambda->to();
+			if (auto primop = to->isa<PrimOp>()) {
+				std::cout << "\t\t" << "we have a primop here!" << std::endl;
+				emit_def(primop);
+			} else {
+				// just forward information
+				to->join_lattice(lambda->get_lattice());
+
+				if(auto to_lambda = to->isa_lambda()) {
+					std::cout << "\t\t" << "we have a lambda here!" << std::endl;
+
+					if(lambda->num_args() != to_lambda->num_params()) {
+						std::cerr << "Number of arguments does not match number of params" << std::endl;
+					} else {
+						for(int i = 0; i < lambda->num_args(); i++) {
+							to_lambda->param(i)->join_lattice(lambda->arg(i)->get_lattice());
+						}
+					}
+				}	 else {
+					std::cerr << "Definition was not a lambda" << std::endl;
+				}
+
+			}
+		}
 	} while(changed);
 
 	std::cout << "Resulting annotated world:" << std::endl;
