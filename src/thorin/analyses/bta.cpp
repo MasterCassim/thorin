@@ -21,10 +21,10 @@ LV LV::join(LV other) const {
  */
 std::string LV::dump() const {
     if(type == Static) {
-        return "Static";
+        return "[Static]";
     }
 
-    return "Dynamic";
+    return "[Dynamic]";
 }
 
 /*

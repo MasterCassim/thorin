@@ -260,7 +260,7 @@ std::ostream& CodeGen::emit_name_bta(Def def) {
     if (is_fancy())
         reset_color();
 
-    stream() << " : ";
+    //stream() << " : ";
     stream() << def->get_lattice().dump();
 
     return stream();
