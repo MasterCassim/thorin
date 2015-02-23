@@ -12,8 +12,8 @@ LV LV_STATIC  = LV(LV::Static);
 LV LV_DYNAMIC = LV(LV::Dynamic);
 }
 
+/** Computes the join of this lattice value with another. */
 LV LV::join(LV other) const {
-    // TODO: don't always allocate a new LV here?
     return LV(Type(type | other.type));
 }
 
