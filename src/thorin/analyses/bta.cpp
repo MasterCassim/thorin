@@ -1,4 +1,4 @@
-#include <iostream>
+#include <exception>
 #include <thorin/be/thorin.h>
 #include "thorin/analyses/bta.h"
 #include "thorin/primop.h"
@@ -17,15 +17,24 @@ LV LV::join(LV other) const {
     return LV(Type(type | other.type));
 }
 
-/*
- *  Method used to print a lattice value.
- */
-std::string LV::dump() const {
-    if(type == Static) {
-        return "[Static]";
+std::string to_string(LV const lv) {
+    switch (lv.type) {
+        case LV::Static:  return "Static";
+        case LV::Dynamic: return "Dynamic";
+        default:          THORIN_UNREACHABLE;
     }
+}
 
-    return "[Dynamic]";
+std::ostream & operator<<(std::ostream &os, LV const lv) {
+    return os << to_string(lv);
+}
+
+void LV::dump(std::ostream &os) const {
+    os << *this << std::endl;
+}
+
+void LV::dump() const {
+    dump(std::cerr);
 }
 
 /*
