@@ -7,9 +7,10 @@
 
 namespace thorin {
 
-// static lattice values to use
+namespace {
+LV LV_STATIC  = LV(LV::Static);
 LV LV_DYNAMIC = LV(LV::Dynamic);
-LV LV_STATIC = LV(LV::Static);
+}
 
 LV LV::join(LV other) const {
     // TODO: don't always allocate a new LV here?
