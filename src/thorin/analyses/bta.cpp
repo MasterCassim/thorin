@@ -307,7 +307,7 @@ std::ostream& CodeGenCopy::emit_head_bta(const Lambda* lambda) {
 //------------------------------------------------------------------------------
 
 void BTA::emit_bta(const Scope& scope, bool fancy, bool nocolor) {
-    CodeGenCopy cg(fancy, nocolor);
+    CodeGenCopy cg(*this, fancy, nocolor);
     auto schedule = schedule_smart(scope);
     auto bbs = bb_schedule(scope);
     for (auto lambda : bbs) {
@@ -326,7 +326,7 @@ void BTA::emit_bta(const Scope& scope, bool fancy, bool nocolor) {
 }
 
 void BTA::emit_bta(const World& world, bool fancy, bool nocolor) {
-    CodeGenCopy cg(fancy, nocolor);
+    CodeGenCopy cg(*this, fancy, nocolor);
     cg.stream() << "module '" << world.name() << "'\n\n";
 
     for (auto primop : world.primops()) {
