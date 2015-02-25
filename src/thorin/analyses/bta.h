@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include "thorin/def.h"
+#include "scope.h"
 
 namespace thorin {
 
@@ -48,6 +49,7 @@ struct LV {
 struct BTA {
     void run(World &world);
     LV   get(DefNode const *def);
+    void emit(World &world);
 
     private:
     void visit(DefNode const *);
@@ -58,6 +60,9 @@ struct BTA {
 
     bool update   (DefNode const *def, LV const lv);
     void propagate(DefNode const *def, LV const lv);
+
+    void emit_bta(const Scope&, bool fancy = true, bool colored = false);
+    void emit_bta(const World&, bool fancy = true, bool colored = false);
 
     std::vector<DefNode const *> worklist;
     DefMap<LV> LatticeValues;
